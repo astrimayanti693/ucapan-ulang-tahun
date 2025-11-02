@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Selamat Ulang Tahun, Rivaldi 💖</title>
+  <style>
+    :root{
+      --accent:#ff7aa2;
+      --bg-overlay: rgba(255,255,255,0.72);
+    }
+    html,body{height:100%; margin:0;}
+    body{
+      background-image: url("foto-bg.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    /* soft pink overlay so text is readable */
+    .overlay{
+      position:fixed; inset:0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,192,203,0.10));
+      backdrop-filter: blur(6px);
+      z-index:0;
+    }
+    .card{
+      position:relative;
+      z-index:1;
+      width: min(760px, 94%);
+      background: var(--bg-overlay);
+      border-radius:20px;
+      padding:28px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+      text-align:center;
+      color:#3b3b3b;
+    }
+    h1{color:var(--accent); margin:8px 0; font-size:28px;}
+    .subtitle{color:#6b6b6b; margin-top:4px;}
+    .message {
+      min-height:110px;
+      font-size:20px;
+      font-weight:600;
+      margin-top:18px;
+      color:#2b2b2b;
+    }
+
+    /* typewriter */
+    .typewrap{ display:inline-block; white-space:pre-wrap; word-break:break-word; }
+    .cursor{
+      display:inline-block;
+      width:2px;
+      background:var(--accent);
+      margin-left:6px;
+      animation: blink 1s steps(1) infinite;
+      vertical-align:bottom;
+      height:1.2em;
+    }
+    @keyframes blink{50%{opacity:0}}
+
+    /* control buttons */
+    .controls{ margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+    .btn{ padding:10px 16px; border-radius:999px; font-weight:600; border:none; cursor:pointer; }
+    .btn-primary{ background:linear-gradient(90deg,#ff6ea1,#ff98c8); color:white; box-shadow:0 6px 18px rgba(255,110,161,0.28); }
+    .btn-ghost{ background:transparent; border:1px solid rgba(0,0,0,0.06); color:#444; }
+
+    /* hearts falling */
+    .heart{ position:fixed; top:-40px; z-index:2; font-size:20px; animation:fall linear infinite; pointer-events:none; }
+    @keyframes fall{ 0%{transform:translateY(-10vh) rotate(0deg); opacity:1} 100%{transform:translateY(110vh) rotate(360deg); opacity:0} }
+
+    /* small footer */
+    .footer{ margin-top:14px; font-size:12px; color:#666; }
+    @media (max-width:420px){
+      h1{font-size:20px}
+      .message{font-size:16px}
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <main class="card">
+    <img id="mainGif" src="https://media.tenor.com/cofRHcGGOfoAAAAi/shy-cute.gif" alt="cute" width="140" class="mx-auto rounded-lg" />
+    <h1>Untuk: <span id="recipientName">Rivaldi Lamadau</span> 🎂</h1>
+    <div class="subtitle">Dari: <strong id="senderName">Calon Istrimu</strong></div>
+
+    <div class="message" aria-live="polite">
+      <span id="typed" class="typewrap"></span><span class="cursor" id="cursor"></span>
+    </div>
+
+    <div class="controls">
+      <button id="prevBtn" class="btn btn-ghost">Prev</button>
+      <button id="nextBtn" class="btn btn-primary">Next</button>
+      <button id="autoBtn" class="btn btn-primary">Auto Play</button>
+    </div>
+
+    <div class="controls" style="margin-top:12px; gap:8px;">
+      <label style="align-self:center; font-size:13px; color:#555">Play Reff (optional):</label>
+      <input id="startSec" type="number" min="0" value="55" style="width:72px; padding:8px; border-radius:8px; border:1px solid #eee" />
+      <input id="endSec" type="number" min="1" value="85" style="width:72px; padding:8px; border-radius:8px; border:1px solid #eee" />
+      <button id="playReff" class="btn btn-ghost">Play Reff</button>
+      <button id="stopReff" class="btn btn-ghost">Stop</button>
+    </div>
+
+    <div style="margin-top:14px;">
+      <a id="waBtn" href="https://wa.me/6285166367766" target="_blank" class="btn btn-primary" style="text-decoration:none">Chat di WhatsApp 💌</a>
+    </div>
+
+    <div class="footer">Tip: Untuk memutar lagu reff, tambahkan file <code>aku_takut.mp3</code> di folder yang sama, atau edit tag audio di file HTML.</div>
+  </main>
+
+  <audio id="song" preload="metadata">
+    <source src="aku_takut.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    const recipient = "Rivaldi Lamadau";
+    const sender = "Calon Istrimu";
+    const messages = [
+      "Selamat ulang tahun, cintaku 💕",
+      "Semoga semua doa indah jadi nyata untukmu",
+      "Aku bersyukur banget punya kamu di hidupku",
+      "Kamu alasan aku tersenyum setiap hari 😍",
+      "I love you endlessly 💖",
+      "Maafin yaa aku sering rese"
+    ];
+
+    // fill header
+    document.getElementById('recipientName').innerText = recipient;
+    document.getElementById('senderName').innerText = sender;
+
+    // typewriter logic
+    const typedEl = document.getElementById('typed');
+    const cursor = document.getElementById('cursor');
+    let idx = 0, charIdx = 0, isTyping = false;
+    let auto = false, autoTimer = null;
+
+    function typeMessage(i){
+      if(i < 0) i = 0;
+      if(i >= messages.length) i = messages.length - 1;
+      idx = i;
+      const msg = messages[i];
+      typedEl.textContent = "";
+      charIdx = 0;
+      isTyping = true;
+      cursor.style.visibility = 'visible';
+
+      function step(){
+        if(charIdx < msg.length){
+          typedEl.textContent += msg.charAt(charIdx);
+          charIdx++;
+          setTimeout(step, 45 + Math.random()*30); // human-like typing
+        } else {
+          isTyping = false;
+          cursor.style.visibility = 'hidden';
+          // change gif on final message
+          const gif = document.getElementById('mainGif');
+          gif.src = (i === messages.length - 1) ? "https://media1.tenor.com/m/lYJc0Wn1L9AAAAAC/love-you.gif" : "https://media.tenor.com/cofRHcGGOfoAAAAi/shy-cute.gif";
+        }
+      }
+      step();
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', ()=>{
+      if(isTyping) return;
+      if(idx < messages.length - 1) typeMessage(idx + 1);
+    });
+    document.getElementById('prevBtn').addEventListener('click', ()=>{
+      if(isTyping) return;
+      if(idx > 0) typeMessage(idx - 1);
+    });
+
+    document.getElementById('autoBtn').addEventListener('click', ()=>{
+      auto = !auto;
+      const btn = document.getElementById('autoBtn');
+      if(auto){
+        btn.innerText = 'Stop Auto';
+        startAuto();
+      } else {
+        btn.innerText = 'Auto Play';
+        stopAuto();
+      }
+    });
+
+    function startAuto(){
+      stopAuto();
+      autoTimer = setInterval(()=>{
+        if(!isTyping){
+          if(idx < messages.length - 1) typeMessage(idx + 1);
+          else stopAuto();
+        }
+      }, 3800);
+    }
+    function stopAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = null; auto=false; document.getElementById('autoBtn').innerText='Auto Play'; }
+
+    // initial
+    typeMessage(0);
+
+    // hearts
+    function createHeart(){
+      const h = document.createElement('div');
+      h.className = 'heart';
+      h.innerText = ['💖','💕','💘','💞'][Math.floor(Math.random()*4)];
+      h.style.left = Math.random()*90 + 'vw';
+      h.style.fontSize = (12 + Math.random()*32) + 'px';
+      h.style.animationDuration = (3 + Math.random()*4) + 's';
+      document.body.appendChild(h);
+      setTimeout(()=> h.remove(), 9000);
+    }
+    setInterval(createHeart, 350);
+
+    // reff audio controls
+    const audio = document.getElementById('song');
+    const playReff = document.getElementById('playReff');
+    const stopReff = document.getElementById('stopReff');
+    const startInput = document.getElementById('startSec');
+    const endInput = document.getElementById('endSec');
+    let reffTimer = null;
+    playReff.addEventListener('click', ()=>{
+      const start = parseFloat(startInput.value) || 0;
+      const end = parseFloat(endInput.value) || start + 30;
+      audio.currentTime = Math.max(0, start);
+      audio.play().catch(()=> alert("Tidak bisa memutar audio. Pastikan file 'aku_takut.mp3' ditambahkan."));
+      if(reffTimer) clearInterval(reffTimer);
+      reffTimer = setInterval(()=>{
+        if(audio.currentTime >= end){
+          audio.pause();
+          clearInterval(reffTimer); reffTimer = null;
+        }
+      }, 200);
+    });
+    stopReff.addEventListener('click', ()=>{ if(reffTimer) clearInterval(reffTimer); audio.pause(); audio.currentTime=0; });
+  </script>
+</body>
+</html>
